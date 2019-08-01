@@ -101,7 +101,7 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
         let input = try AVCaptureDeviceInput(device: captureDevice!)
         self.captureSession = AVCaptureSession()
         self.captureSession?.addInput(input)
-        
+        self.captureSession!.sessionPreset = AVCaptureSession.Preset.low;
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession!)
         videoPreviewLayer?.videoGravity = AVLayerVideoGravity.resizeAspectFill
         videoPreviewLayer?.frame = view.layer.bounds
@@ -125,12 +125,13 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
     
   }
   
-  @objc(setModelFile:) public func setModelFile(modelFile: String) {
-    print("Setting model file to: " + modelFile)
-    let path = Bundle.main.url(forResource: modelFile, withExtension: "mlmodelc")
+  @objc(setModelFile:) public func setModelFile(modelPath: String) {
+//    print("Setting model file to: " + modelFile)
+    //let path = Bundle.main.url(forResource: modelFile, withExtension: "mlmodelc")
+    let path = NSURL.fileURL(withPath: modelPath)
     
     do {
-      let modelUrl = try MLModel.compileModel(at: path!)
+      let modelUrl = try MLModel.compileModel(at: path)
       let model = try MLModel.init(contentsOf: modelUrl)
       self.model = try VNCoreMLModel(for: model)
       
