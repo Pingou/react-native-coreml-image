@@ -3,6 +3,7 @@
   "version": "0.0.8",
   "description": "ReactNative library to allow realtime image recognition through CoreML Machine Learning",
   "license": "MIT",
+  "author": "pingou",
   "repository" : { 
     "type": "git",
     "url": "https://github.com/Pingou/react-native-coreml-image"
