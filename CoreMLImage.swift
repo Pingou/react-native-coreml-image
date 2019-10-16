@@ -19,7 +19,10 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 	var model: VNCoreMLModel?
 	var lastClassification: String = ""
 	var onClassification: RCTBubblingEventBlock?
+	var onModelLoaded: RCTBubblingEventBlock?
 	var lastComputation: Int64 = 0
+	var modelLoadedAt: Int64 = 0
+	var modelLoaded = false
 	
 	required public init(coder aDecoder: NSCoder) {
 		super.init(coder: aDecoder)!
@@ -36,7 +39,7 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 	
 	public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 		let now = Int64(NSDate().timeIntervalSince1970 * 1000)
-		if (now > self.lastComputation + 300) {
+		if (now > self.modelLoadedAt + 3000 && now > self.lastComputation + 300) {
 			let img = self.imageFromSampleBuffer(sampleBuffer: sampleBuffer)
 			
 			self.lastComputation = now
@@ -48,6 +51,7 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 		}
 		
 	}
+	
 	
 	func runMachineLearning(img: CIImage) {
 		if (self.model != nil) {
@@ -84,17 +88,19 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 			var classificationArray = [Dictionary<String, Any>]()
 			//        var orderedArray = classifications.sorted(by: { $0.confidence < $1.confidence })
 			
-			
-			//        print(orderedArray)
+//			for classification in classifications {
+//				print(classification.identifier)
+//				print(classification.confidence)
+//			}
 			var x = 0
 			for classification in classifications {
-				classificationArray.append(["identifier": classification.identifier, "confidence": classification.confidence])
+				classificationArray.append(["n": classification.identifier, "c": classification.confidence])
 				if (x > 500) {
 					break
 				}
 				x += 1
 			}
-			print(classificationArray)
+//			print(classificationArray)
 			
 			//        classifications.forEach{classification in
 			//          classificationArray.append(["identifier": classification.identifier, "confidence": classification.confidence])
@@ -117,6 +123,14 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 	
 	override public func layoutSubviews() {
 		super.layoutSubviews()
+		
+		if (self.modelLoaded == false) {
+			if (onModelLoaded != nil) {
+				self.onModelLoaded!(nil)
+			}
+			self.modelLoaded = true;
+		}
+		
 		let view = UIView(frame: CGRect(x: 0, y: 0, width: self.frame.width,
 										height: self.frame.height))
 		
@@ -127,7 +141,7 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 				let input = try AVCaptureDeviceInput(device: captureDevice!)
 				self.captureSession = AVCaptureSession()
 				self.captureSession?.addInput(input)
-				self.captureSession!.sessionPreset = AVCaptureSession.Preset.low;
+				//self.captureSession!.sessionPreset = AVCaptureSession.Preset.medium;
 				videoPreviewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession!)
 				videoPreviewLayer?.videoGravity = AVLayerVideoGravity.resizeAspectFill
 				videoPreviewLayer?.frame = view.layer.bounds
@@ -147,6 +161,7 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 			
 		} catch {
 			print(error)
+			
 		}
 		
 	}
@@ -161,14 +176,29 @@ public class CoreMLImage: UIView, AVCaptureVideoDataOutputSampleBufferDelegate {
 			let model = try MLModel.init(contentsOf: modelUrl)
 			self.model = try VNCoreMLModel(for: model)
 			
+			if (onModelLoaded != nil) {
+				self.onModelLoaded!(nil)
+			}
+			
 		} catch {
+
+			if (onModelLoaded != nil) {
+				self.onModelLoaded!(nil)
+			}
 			print("Error")
 		}
+		
+		self.modelLoadedAt = Int64(NSDate().timeIntervalSince1970 * 1000)
+		
 		
 	}
 	
 	@objc(setOnClassification:) public func setOnClassification(onClassification: @escaping RCTBubblingEventBlock) {
 		self.onClassification = onClassification
+	}
+	
+	@objc(setOnModelLoaded:) public func setOnModelLoaded(onModelLoaded: @escaping RCTBubblingEventBlock) {
+		self.onModelLoaded = onModelLoaded
 	}
 	
 	
