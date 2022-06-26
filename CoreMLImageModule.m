@@ -4,4 +4,5 @@
 @interface RCT_EXTERN_MODULE(CoreMLImageManager, RCTViewManager)
 RCT_EXPORT_VIEW_PROPERTY(modelFile, NSString);
 RCT_EXPORT_VIEW_PROPERTY(onClassification, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onModelLoaded, RCTBubblingEventBlock);
 @end
